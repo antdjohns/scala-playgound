@@ -131,7 +131,3 @@ object Http4s extends IOApp.Simple {
     .build
     .use(_ => IO.println("Server Ready") *> IO.never)
 }
-
-
-
-
