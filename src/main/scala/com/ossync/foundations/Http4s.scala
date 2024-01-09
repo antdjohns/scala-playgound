@@ -1,16 +1,17 @@
 package com.ossync.foundations
 
-import cats._
-import cats.implicits._
+import cats.*
+import cats.implicits.*
 import io.circe.generic.auto.*
 import io.circe.syntax.*
 import org.http4s.circe.*
-import cats.effect.{IO, IOApp}
-import org.http4s.dsl.Http4sDsl
-import org.http4s.{HttpRoutes, QueryParamDecoder}
-import org.http4s.dsl.impl.{OptionalValidatingQueryParamDecoderMatcher, QueryParamDecoderMatcher}
+import cats.effect.*
+import org.http4s.dsl.*
+import org.http4s.*
+import org.http4s.dsl.impl.*
+import org.typelevel.ci.CIString
 import org.http4s.ember.server.EmberServerBuilder
-
+import org.http4s.server.Router
 
 import scala.collection.mutable.*
 import java.util.UUID
@@ -22,14 +23,10 @@ object Http4s extends IOApp.Simple {
   // simulate an HTTP server with students and courses.
   type Student = String
 
-  case class Instructor(firstname: String, lastname: String) {
-    def getName = {
-      s"$firstname $lastname"
-    }
-  }
+  case class Instructor(firstname: String, lastname: String):
+    val getName: String = s"$firstname $lastname"
 
   val testInstructor: Instructor = Instructor("Jimmy", "Howard")
-  val instructorName: String = testInstructor.getName
 
   case class Course(id: String, title: String, year: Int, students: List[Student], instructorName: String)
   case class CourseResponse(status: String, courses: List[Course])
@@ -40,7 +37,7 @@ object Http4s extends IOApp.Simple {
       "e74ec368-ad7f-4468-a601-93498b029fb8",
       "Cats Effect Course",
       2023,
-      List(),
+      List("Anthony", "Jimmy", "James"),
       testInstructor.getName)
 
     val courses: Map[String, Course] = mutable.Map(catsEffectCourse.id -> catsEffectCourse)
@@ -71,9 +68,10 @@ object Http4s extends IOApp.Simple {
   // GET localhost:8080/courses?instructor=Martin%20Odersky&year=2022
   // GET /courses/{id}
 
-  object InstructorQueryParamMatcher extends QueryParamDecoderMatcher[String]("instructor")
+  private object InstructorQueryParamMatcher extends QueryParamDecoderMatcher[String]("instructor")
+  private object StudentQueryParamMatcher extends QueryParamDecoderMatcher[String]("student")
+  private object YearQueryParamMatcher extends OptionalValidatingQueryParamDecoderMatcher[Int]("year")
 
-  object YearQueryParamMatcher extends OptionalValidatingQueryParamDecoderMatcher[Int]("year")
 
   def courseRoutes[F[_] : Monad]: HttpRoutes[F] = {
     val dsl = Http4sDsl[F]
@@ -85,7 +83,6 @@ object Http4s extends IOApp.Simple {
         val courses = CourseRepository.findCourseByInstructorV2(instructor)
         courses.isEmpty match {
           case true => {
-            println(courses.isEmpty)
             Ok(CourseResponse("error: instructor name invalid", courses).asJson)
           }
           case _ =>
@@ -95,22 +92,42 @@ object Http4s extends IOApp.Simple {
             _ => BadRequest("Year is invalid"),
             year => {
               val c = courses.filter(_.year == year)
-              if (c.isEmpty) Ok(CourseResponse("error", c).asJson)
+              if c.isEmpty then Ok(CourseResponse("error", c).asJson, Header.Raw(CIString("x-ossync-origin"), "xcv"))
               else Ok(CourseResponse("success", c).asJson)
             }
           )
           case None => {
-            if (courses.isEmpty) Ok(CourseResponse("error", courses).asJson)
+            if courses.isEmpty then Ok(CourseResponse("error", courses).asJson)
             else Ok(CourseResponse("success", courses).asJson)
           }
         }
-
+      case GET -> Root / "courses" / courseId / "students" =>
+        val students = CourseRepository.findCourseById(courseId).map(_.students)
+        students.isEmpty match {
+          case true => Ok("empty")
+          case _ => Ok(students.asJson)
+        }
     }
   }
 
+  def healthEndpoint[F[_]: Monad]: HttpRoutes[F] = {
+    val dsl = Http4sDsl[F]
+    import dsl.*
+    HttpRoutes.of[F] {
+      case GET -> Root / "health" => Ok("looking good")
+    }
+  }
+
+  def allRoutes[F[_]: Monad]: HttpRoutes[F] = courseRoutes[F] <+> healthEndpoint[F]
+
+  def routesWithPathPrefixes = Router(
+    "/api" -> courseRoutes[IO],
+    "/private" -> healthEndpoint[IO]
+  ).orNotFound
+
   override def run = EmberServerBuilder
     .default[IO]
-    .withHttpApp(courseRoutes[IO].orNotFound)
+    .withHttpApp(routesWithPathPrefixes)
     .build
     .use(_ => IO.println("Server Ready") *> IO.never)
 }
