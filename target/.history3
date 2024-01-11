@@ -1,1 +1,16 @@
 1704744844912:;set _root_.scala.collection.Seq(historyPath := None,shellPrompt := { _ => "" },SettingKey[_root_.scala.Option[_root_.sbt.File]]("sbtStructureOutputFile") in _root_.sbt.Global := _root_.scala.Some(_root_.sbt.file("/private/var/folders/xz/2qlsfvqd0mv10scmcnztrnq80000gn/T/sbt-structure.xml")),SettingKey[_root_.java.lang.String]("sbtStructureOptions") in _root_.sbt.Global := "download, resolveClassifiers");apply -cp "/Users/anthonyjohnson/Library/Application Support/JetBrains/IdeaIC2022.3/plugins/Scala/repo/org/jetbrains/scala/sbt-structure-extractor_2.12_1.0/2022.3.1/sbt-structure-extractor-2022.3.1.jar" org.jetbrains.sbt.CreateTasks;preferScala2;*/*:dumpStructure
+1704942310619:runMain com.ossync.jobsboard.Application
+1704942450711:runMain
+1704942459460:help
+1704942477538:projects
+1704942497579:tasks
+1704942509623:runMain help
+1704943581361:exit
+1704943621861:runMain "com.ossync.jobboard.Application"
+1704943701202:compileIncremental com/ossync/jobboard/Application
+1704943712401:compileIncremental "com/ossync/jobboard/Application"
+1704943725553:compileIncremental com/ossync/jobboard/Application
+1704943739392:compile
+1704943889834:exit
+1704944084768:compile
+1704944425856:exit
