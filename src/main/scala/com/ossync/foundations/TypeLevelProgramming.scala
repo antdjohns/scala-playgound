@@ -27,7 +27,7 @@ object TypeLevelProgramming  extends App {
   }
 
   val zeroLessThanTwo = <[_0, _2]
-  val threeLessThanOne = <[_3, _1]
+//   val threeLessThanOne = <[_3, _1]
 
   case class Person(name: String, age: Int)
   given p: Person = Person("sam", 1)
