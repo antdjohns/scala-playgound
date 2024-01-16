@@ -10,7 +10,8 @@ import org.http4s.ember.server.*
 import org.http4s.server.*
 import com.comcast.ip4s.*
 
-import com.ossync.jobsboard.http.routes.HealthRoutes
+import com.ossync.jobsboard.http.*
+
 import com.ossync.jobsboard.config.syntax.*
 import com.ossync.jobsboard.config.*
 import pureconfig.ConfigSource
@@ -52,12 +53,14 @@ object Application extends IOApp.Simple  {
 
     val configSource = ConfigSource.default.load[EmberConfig]
 
+    
+
     override def run = ConfigSource.default.loadF[IO, EmberConfig].flatMap {config => 
           EmberServerBuilder
             .default[IO]
             .withHost(Host.fromString(config.host).get)
             .withPort(Port.fromInt(config.port).get)
-            .withHttpApp(HealthRoutes[IO].routes.orNotFound)
+            .withHttpApp(HttpApi[IO].endpoints.orNotFound)
             .build
             .use(_ => IO.println("Server Ready") *> IO.never)
     }
