@@ -9,8 +9,9 @@ import org.http4s.circe.*
 import org.http4s.ember.server.*
 import org.http4s.server.*
 import com.ossync.jobsboard.http.routes.*
+import cats.effect.*
 
-class HttpApi[F[_]: Monad] private {
+class HttpApi[F[_]: Concurrent] private {
   private val healthRoutes= HealthRoutes[F].routes
   private val jobRoutes = JobsRoutes[F].routes
 
@@ -20,5 +21,5 @@ class HttpApi[F[_]: Monad] private {
 }
 
 object HttpApi {
-    def apply[F[_]: Monad] = new HttpApi[F]
+    def apply[F[_]: Concurrent] = new HttpApi[F]
 }
